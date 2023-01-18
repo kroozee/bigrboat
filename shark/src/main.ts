@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import fetch  from "node-fetch";
-import {  PublicArenaCreated } from './arena';
+import {  PlayerCreated, PublicArenaCreated } from './arena';
 import { BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
@@ -134,15 +134,24 @@ socket.connect();
 
 async function main() {
     console.log('started');
-    const arena = await createArena();
-    const player = createShark("0000-EKFE","BIGRBOAT");
-    sharkControlClient.takeControl("0000-EKFE","3ab602f5-1652-44d7-bfa5-5d5b8826776f");
+    const arenaId = "0000-T0P4";
+    const player_id = "3ab602f5-1652-44d7-bfa5-5d5b8826776f";
+    //const arena = await createArena(); 
+    //const player = await createShark(arenaId,"BIGRBOAT");
+    //console.log(player.playerId);
+    sharkControlClient.takeControl(arenaId,player_id);
     sharkControlClient.getBeatUpdate((update)=>{
         console.log(update);
     });
-    debugger;
+    //sharkControlClient.setSharkMode(arenaId,player_id,"attack")
+    sharkControlClient.fireTorpedo(arenaId,player_id,Math.PI)
+    sharkControlClient.fireLaser(arenaId,player_id);
+
+
     // const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
 }
+
+
 
 async function createArena(): Promise<PublicArenaCreated> {
     const payload = {
@@ -170,7 +179,7 @@ async function createShark(arena:string, name:string) {
         headers: {'Content-Type': 'application/json'}
     });
     const body = await result.json();
-    return body;
+    return body as PlayerCreated;
 }
 
 main();
