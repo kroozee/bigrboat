@@ -1,3 +1,5 @@
+import { FinSpeed, Position, Velocity } from "./spacial"
+
 type basicShark = {
     id: string
     name: string
@@ -30,7 +32,7 @@ export type BeatUpdate = {
     sharkId: string
     gameTime: number
     isAlive: 'yes'
-    mode: state.SharkMode
+    mode: SharkMode
     centerPoint: Position
     facing: number
     energy: number
@@ -85,7 +87,7 @@ export type narrowScanExecutedEvent = {
     event: 'narrowScanExecutedEvent'
     commandId: string
     centerPoint: Position
-    direction: number    
+    direction: number
     sharks: scannedShark[]
     torpedoes: scannedTorpedo[]
 }
@@ -144,3 +146,12 @@ export type ClassyTrashTalkedEvent = {
     subject: string,
     message: string
 }
+
+export type damageSource =
+| "Laser"
+| "Torpedo";
+
+export type SharkMode =
+| 'attack'
+| 'repair'
+| 'stealth';
