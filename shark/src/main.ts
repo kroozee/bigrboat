@@ -1,26 +1,147 @@
-import {io} from "socket.io-client";
-import fetch  from "node-fetch";
-
+import { io, Socket } from "socket.io-client";
+import {  PublicArenaCreated } from './arena';
+import { BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
+import { CommandUpdate } from "./playerCommands";
+import { ServerToClientEvents } from "./serverToClientEvents";
 
 const api_root = "http://192.168.130.142:3000";
+const socket: Socket<ServerToClientEvents, any> = io(api_root);
+type beatUpdateDelegate = (update : BeatUpdate | DeadBeatUpdate) => void;
+type commandUpdateDelegate = (update: CommandUpdate) => void;
 
-async function main(){
-    const arena = await createArena() as any;
-    const arenaId = arena.data.arenaId;
-    const socket = io(api_root);
-    //const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
+let beatUpdate : beatUpdateDelegate = _ => {};
+let commandUpdate : commandUpdateDelegate = _ => {};
+const doResultLogging = false;
+
+function logResult(result: CommandUpdate) {
+    if (doResultLogging)
+        console.log('**Command result**', result);
 }
 
+socket.on('commandUpdate', (update => {
+    commandUpdate(update);
+}));
 
-async function createArena(){
+socket.on('beatUpdate', update => {
+    beatUpdate(update);
+    const nonProximityEvents = update.events /*.filter(e => e.event != 'proximityAlarmEvent')*/.length > 0;
+    if (nonProximityEvents) {
+        console.log('beat events detected', update)
+    }
+    else if (update.gameTime % 720 == 0) {
+        console.log('1 minute beat Update', update)
+    }
+})
+
+export const sharkControlClient = {
+
+    getBeatUpdate: (delegate: beatUpdateDelegate) => beatUpdate = delegate,
+    getCommandUpdate: (delegate: commandUpdateDelegate) => commandUpdate = delegate,
+
+    doStuff: () => {
+        socket.emit('doStuff', (result: CommandUpdate) => {
+            commandUpdate(result);
+            logResult(result);
+        })
+    },
+
+    takeControl: (arenaId: string, playerId: string) => {
+        socket.emit(
+            'takeControl',
+            arenaId,
+            playerId,
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            }
+        )
+    },
+
+    setFinSpeed: (arenaId: string, playerId: string, portSpeed: number, starboardSpeed: number) => {
+        socket.emit(
+            'setFinSpeed',
+            arenaId,
+            playerId,
+            { port: portSpeed, starboard: starboardSpeed},
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            });
+    },
+
+    setSharkMode: (arenaId: string, playerId: string, mode: SharkMode) => {
+        socket.emit(
+            'setSharkMode',
+            arenaId,
+            playerId,
+            mode,
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            });
+    },
+
+    performWideScan: (arenaId: string, playerId: string) => {
+        socket.emit(
+            'performWideScan',
+            arenaId,
+            playerId,
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            });
+    },
+
+    fireLaser: (arenaId: string, playerId: string) => {
+        socket.emit(
+            'fireLaser',
+            arenaId,
+            playerId,
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            });
+    },
+
+    performNarrowScan: (arenaId: string, playerId: string, angle: number) => {
+        socket.emit(
+            'performNarrowScan',
+            arenaId,
+            playerId,
+            angle,
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            });
+    },
+
+    fireTorpedo: (arenaId: string, playerId: string, angle: number) => {
+        socket.emit(
+            'fireTorpedo',
+            arenaId,
+            playerId,
+            angle,
+            (result: CommandUpdate) => {
+                commandUpdate(result);
+                logResult(result);
+            });
+    }
+};
+
+socket.on('connect', () => console.log('connected!!!!!'));
+socket.connect();
+
+async function main() {
+    console.log('started');
+    const arena = await createArena() as any;
+    // const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
+}
+
+async function createArena(): Promise<PublicArenaCreated> {
     const payload = {
-        arenaType: "private",
+        arenaType: "public",
         countdownToStart: 24,
-        gameLength: 720,
-        players: [
-            { sharkName: "joe" },
-            { sharkName: "bob" }
-        ]
+        gameLength: 720
     }
     const result = await fetch(`${api_root}/create-arena`,{
         method:"POST",

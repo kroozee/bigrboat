@@ -10,7 +10,7 @@ export type scannedShark = {
     name: string
     center: Position
     velocity: Velocity
-    healthStatus: sharkHealthStatus
+    healthStatus: any //sharkHealthStatus
 }
 
 type scannedTorpedo = {
@@ -148,10 +148,10 @@ export type ClassyTrashTalkedEvent = {
 }
 
 export type damageSource =
-| "Laser"
-| "Torpedo";
+    | "Laser"
+    | "Torpedo";
 
 export type SharkMode =
-| 'attack'
-| 'repair'
-| 'stealth';
+    | 'attack'
+    | 'repair'
+    | 'stealth';
