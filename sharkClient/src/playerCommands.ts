@@ -1,3 +1,5 @@
+import { Angle, FinSpeed } from "./spacial"
+
 type commandStatus = 'failed' | 'succeeded' | 'in-progress'
 
 export type CommandUpdate = {
@@ -81,6 +83,7 @@ export type setSharkMode = {
     commandId: TransId
     arenaId: TransId
     sharkId: TransId   
-    mode: SharkMode
+    mode: setSharkMode
     onUpdate: (commandUpdate : CommandUpdate) => void
 }
+export type TransId = string;

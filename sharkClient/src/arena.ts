@@ -54,28 +54,28 @@ export type ArenaSettings = {
         regenFrequency: number
         speed: number
         explosionRange: number
-        explosionToll: HealthAndEngergyChange
+        explosionToll: HealthAndEnergyChange
     }
     laser: {
-        firingToll: HealthAndEngergyChange
-        hitToll: HealthAndEngergyChange
+        firingToll: HealthAndEnergyChange
+        hitToll: HealthAndEnergyChange
     }
     scan: {
         proximityAlarmRange: number // distance
         wideRange: number // distance
-        wideToll: HealthAndEngergyChange
+        wideToll: HealthAndEnergyChange
         narrowBand: number // angle
-        narrowScanToll: HealthAndEngergyChange
+        narrowScanToll: HealthAndEnergyChange
     }    
-    outOfBoundsToll: HealthAndEngergyChange
+    outOfBoundsToll: HealthAndEnergyChange
     deathTimePenalty: { // base * previousNumberOfDeaths^perAdditionalMultiplier
         base: number
         perAdditionalMultiplier: number
     }
     modeBeatToll: {
-        attackMode: HealthAndEngergyChange
-        repairMode: HealthAndEngergyChange
-        stealthMode: HealthAndEngergyChange
+        attackMode: HealthAndEnergyChange
+        repairMode: HealthAndEnergyChange
+        stealthMode: HealthAndEnergyChange
     }
     scoring: {
         
@@ -122,4 +122,8 @@ export type PlayerCreated = {
 
 export type CreatePlayer = {
     sharkName: string
+}
+
+export type HealthAndEnergyChange = {
+    change:number;
 }

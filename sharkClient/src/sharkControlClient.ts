@@ -1,3 +1,8 @@
+import { io, Socket } from "socket.io-client";
+import { BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
+import { CommandUpdate } from "./playerCommands";
+import { ServerToClientEvents } from "./serverToClientEvents";
+
 const socket: Socket<ServerToClientEvents, SharkCommands> = io();
 type beatUpdateDelegate = (update : BeatUpdate | DeadBeatUpdate) => void;
 type commandUpdateDelegate = (update: CommandUpdate) => void;
@@ -15,7 +20,7 @@ socket.on('commandUpdate', (update => {
     commandUpdate(update);
 }));
 
-socket.on('beatUpdate', update => { 
+socket.on('beatUpdate', update => {
     beatUpdate(update);
     const nonProximityEvents = update.events /*.filter(e => e.event != 'proximityAlarmEvent')*/.length > 0;
     if (nonProximityEvents) {
@@ -54,7 +59,7 @@ export const sharkControlClient = {
         socket.emit(
             'setFinSpeed',
             arenaId,
-            playerId, 
+            playerId,
             { port: portSpeed, starboard: starboardSpeed},
             (result: CommandUpdate) => {
                 commandUpdate(result);
@@ -71,7 +76,7 @@ export const sharkControlClient = {
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
-            });        
+            });
     },
 
     performWideScan: (arenaId: string, playerId: string) => {
@@ -82,7 +87,7 @@ export const sharkControlClient = {
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
-            }); 
+            });
     },
 
     fireLaser: (arenaId: string, playerId: string) => {
@@ -93,30 +98,42 @@ export const sharkControlClient = {
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
-            }); 
+            });
     },
 
     performNarrowScan: (arenaId: string, playerId: string, angle: number) => {
         socket.emit(
-            'performNarrowScan', 
+            'performNarrowScan',
             arenaId,
             playerId,
             angle,
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
-            });       
+            });
     },
 
     fireTorpedo: (arenaId: string, playerId: string, angle: number) => {
         socket.emit(
-            'fireTorpedo', 
+            'fireTorpedo',
             arenaId,
             playerId,
             angle,
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
-            });       
+            });
     }
+}
+type SharkCommands = {
+    getBeatUpdate:()=> beatUpdateDelegate;
+    getCommandUpdate: ()=> commandUpdateDelegate;
+    doStuff: any;
+    takeControl: any;
+    setFinSpeed : any;
+    setSharkMode : any;
+    performWideScan : any;
+    fireLaser : any;
+    performNarrowScan : any;
+    fireTorpedo : any;
 }
