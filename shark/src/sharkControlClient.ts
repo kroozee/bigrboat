@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { BeatUpdate, DeadBeatUpdate } from "./beatEvents";
+import { BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 
