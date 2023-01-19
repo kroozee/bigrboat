@@ -50,7 +50,20 @@ export type DeadBeatUpdate = {
     events: BeatEvent[]
 }
 
-export type BeatEvent = laserFiredEvent | torpedoDetonatedEvent | torpedoLostEvent | narrowScanExecutedEvent | wideScanExecutedEvent | arenaScanExecutedEvent | scanDetectedEvent | damageTakenEvent | proximityAlarmEvent | sharkDestroyedEvent | sharkRespawnedEvent | ClassyTrashTalkOpportunityEvent | ClassyTrashTalkedEvent;
+export type BeatEvent =
+    | laserFiredEvent
+    | torpedoDetonatedEvent
+    | torpedoLostEvent
+    | narrowScanExecutedEvent
+    | wideScanExecutedEvent
+    | arenaScanExecutedEvent
+    | scanDetectedEvent
+    | damageTakenEvent
+    | proximityAlarmEvent
+    | sharkDestroyedEvent
+    | sharkRespawnedEvent
+    | ClassyTrashTalkOpportunityEvent
+    | ClassyTrashTalkedEvent;
 
 export type laserFiredEvent = {
     event: 'laserFiredEvent'
