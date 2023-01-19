@@ -4,6 +4,7 @@ import { ArenaSettings, PlayerCreated, PublicArenaCreated } from './arena';
 import { BeatEvent, BeatUpdate, DeadBeatUpdate, narrowScanExecutedEvent, scannedShark, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
+import { Position } from './spacial';
 
 const api_root = "http://192.168.130.142:3000";
 const socket: Socket<ServerToClientEvents, any> = io(api_root);
@@ -138,15 +139,17 @@ socket.connect();
 type Shark = ReturnType<typeof createSharkControlClient>;
 
 const state = {
-    lastScanBeat: 0,
+    lastForwardScanBeat: 0,
+    lastCenterScanBeat: 0,
 };
 
 const beatsPerSecond = 12;
-const scanRateInSeconds = 0.5;
+const forwardScanRateInSeconds = 0.75;
+const centerScanRateInSeconds = 2;
 
 async function main() {
     const arenaId = '0006-8PUB';
-    const playerId = '1af20c3a-fc6d-48f2-b656-2720f4f3dd64';
+    const playerId = 'de8bfaca-73e0-4294-9427-26af8521b6a0';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
@@ -178,33 +181,60 @@ async function main() {
 }
 
 function scan(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
-    const scanRateInBeats = scanRateInSeconds * beatsPerSecond;
-    const readyToScan = (update.gameTime - state.lastScanBeat) % scanRateInBeats === 0
-        && update.energy > arena_settings.scan.narrowScanToll.energy;
+    const forwardScanRateInBeats = Math.floor(forwardScanRateInSeconds * beatsPerSecond);
+    const centerScanRateInBeats = Math.floor(centerScanRateInSeconds * beatsPerSecond);
+    
+    const enoughEnergy = update.energy > arena_settings.scan.narrowScanToll.energy;
 
-    if (readyToScan) {
+    const shouldScanCenter = (update.gameTime - state.lastCenterScanBeat) % centerScanRateInBeats === 0
+        && enoughEnergy;
+
+    const shouldScanForward = (update.gameTime - state.lastForwardScanBeat) % forwardScanRateInBeats === 0
+        && enoughEnergy;
+
+    if (shouldScanCenter) {
+        const angleTowardsCenter = getAngleTowardsCenter(update, arena_settings);
+        shark.performNarrowScan(angleTowardsCenter);
+        state.lastCenterScanBeat = update.gameTime;
+    }
+
+    if (shouldScanForward) {
         shark.performNarrowScan(update.facing);
-        state.lastScanBeat = update.gameTime;
+        state.lastForwardScanBeat = update.gameTime;
     }
 }
 
-function getAngleTowardsCenter(update: BeatUpdate, arena_settings: ArenaSettings): number {
+function modifyAngleForQuadrant(angle: number, sharkCenterPoint: Position, arena_settings: ArenaSettings): number {
     const centerY = arena_settings.dimensions.height / 2;
     const centerX = arena_settings.dimensions.height / 2;
 
-    const angleTowardsCenter = Math.atan(
-        (centerY - update.centerPoint.y)
-        / (centerX - update.centerPoint.x));
-
-    const modifier = update.centerPoint.x < centerX
+    const modifier = sharkCenterPoint.x < centerX
         ? Math.PI / 2
         : Math.PI * 1.5;
 
-    const final = update.centerPoint.x * update.centerPoint.y >= 0
-        ? modifier - angleTowardsCenter
-        : modifier + angleTowardsCenter;
+    const final = (centerX - sharkCenterPoint.x) * (centerY - sharkCenterPoint.y) >= 0
+        ? modifier - angle
+        : modifier + angle;
 
     return final;
+}
+
+function getAngleTowardsPoint(ourPosition: Position, targetPosition: Position, arena_settings: ArenaSettings): number {
+    const angleTowardsCenter = Math.atan(
+        Math.abs(targetPosition.y - ourPosition.y)
+        / Math.abs(targetPosition.x - ourPosition.x));
+
+    return modifyAngleForQuadrant(angleTowardsCenter, ourPosition, arena_settings);
+}
+
+function getAngleTowardsCenter(update: BeatUpdate, arena_settings: ArenaSettings): number {
+    return getAngleTowardsPoint(
+        update.centerPoint,
+        {
+            x: arena_settings.dimensions.width / 2,
+            y: arena_settings.dimensions.height
+        },
+        arena_settings);
 }
 
 function detectNearbyShark(update: BeatUpdate): scannedShark | undefined {
@@ -229,10 +259,31 @@ function torpedo(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings
     };
 
     const fireAtNearby = () => {
-        const nearbyShark = detectNearbyShark(update);
+        const scanExecuted = pick(update.events,
+            event => event.event === 'narrowScanExecutedEvent' ? event : undefined);
 
-        if (nearbyShark) {
+        const nearbyShark = scanExecuted?.sharks?.[0];
 
+        if (scanExecuted && scanExecuted.direction !== update.facing && nearbyShark) {
+            const angle = getAngleTowardsPoint(update.centerPoint, nearbyShark.center, arena_settings);
+            shark.fireTorpedo(angle);
+
+
+            /*
+            const { center: targetPosition, velocity: targetVelocity } = nearbyShark;
+            const { centerPoint: ourPosition } = update;
+            const targetedSharkAngle = modifyAngleForQuadrant(targetVelocity.direction, targetPosition, arena_settings);
+
+            const angle = Math.asin(
+                targetVelocity.speed /
+                (arena_settings.torpedo.speed / ((90 * (Math.PI / 2)) - targetedSharkAngle - Math.atan(() / ())))
+            )
+            +
+            Math.atan(() / ());
+
+            const final = modifyAngleForQuadrant(angle, update.centerPoint, arena_settings);
+            shark.fireTorpedo(final);
+            */
         }
     };
 
