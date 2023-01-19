@@ -145,20 +145,34 @@ const beatsPerSecond = 12;
 const scanRateInSeconds = 0.5;
 
 async function main() {
-    const arenaId = '0004-VUJK';
-    const playerId = '27a44e97-b2bf-423b-9095-d1ebfa3ad836';
+    const arenaId = '0006-8PUB';
+    const playerId = '1af20c3a-fc6d-48f2-b656-2720f4f3dd64';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
 
     shark.takeControl();
+    let healing = false;
 
     shark.getBeatUpdate((update: BeatUpdate | DeadBeatUpdate) => {
         if (update.isAlive === 'yes') {
-            roam(shark, update, arena_settings);
-            scan(shark, update, arena_settings);
-            laser(shark, update, arena_settings);
-            torpedo(shark, update, arena_settings);
+            healing = false;
+            if (update.health > 599 && healing === false) {
+                roam(shark, update, arena_settings);
+                scan(shark, update, arena_settings);
+                laser(shark, update, arena_settings);
+                torpedo(shark, update, arena_settings);
+            } else {
+                shark.setFinSpeed(0,0);
+                shark.setSharkMode("repair");
+                healing = true;                
+            }
+            if (update.health > 599) {
+                healing = false;
+                shark.setSharkMode("attack");
+                shark.setFinSpeed(6,6);
+            }
+
         }
     });
 }
@@ -316,27 +330,29 @@ function turn(edge: string, shark: Shark, update: BeatUpdate, arena_settings: Ar
 }
 
 function closeToEdge(x: number, y: number, arena_settings: ArenaSettings) {
-    if (x <= 70 || y <= 70) {
+    const allowable_closeness = 50;
+    if (x <= allowable_closeness || y <= allowable_closeness) {
         return true;
     }
-    if (x >= (arena_settings.dimensions.width - 70) || y >= (arena_settings.dimensions.height - 70)) {
+    if (x >= (arena_settings.dimensions.width - allowable_closeness) || y >= (arena_settings.dimensions.height - allowable_closeness)) {
         return true;
     }
     return false;
 }
 
 function findEdge(x: number, y: number, arena_settings: ArenaSettings) {
+    const allowable_closeness = 50;
     let edge = ""
-    if (x <= 70) {
+    if (x <= allowable_closeness) {
         edge += "left";
     }
-    if (x >= (arena_settings.dimensions.width - 70)) {
+    if (x >= (arena_settings.dimensions.width - allowable_closeness)) {
         edge += "right";
     }
-    if (y <= 70) {
+    if (y <= allowable_closeness) {
         edge += "bottom";
     };
-    if (y >= arena_settings.dimensions.height - 70) {
+    if (y >= arena_settings.dimensions.height - allowable_closeness) {
         edge += "top";
     }
     return edge;
