@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import fetch from "node-fetch";
-import { ArenaSettings, PlayerCreated, PublicArenaCreated } from './arena';
-import { BeatEvent, BeatUpdate, DeadBeatUpdate, narrowScanExecutedEvent, scannedShark, SharkMode } from "./beatEvents";
+import { ArenaSettings, PublicArenaCreated } from './arena';
+import { BeatUpdate, DeadBeatUpdate, scannedShark, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 import { Position } from './spacial';
@@ -148,8 +148,8 @@ const forwardScanRateInSeconds = 0.75;
 const centerScanRateInSeconds = 2;
 
 async function main() {
-    const arenaId = '0006-8PUB';
-    const playerId = 'de8bfaca-73e0-4294-9427-26af8521b6a0';
+    const arenaId = '0000-00DA';
+    const playerId = '681802ef-9c6c-4ca6-8ef7-7553c5f98e93';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
