@@ -137,6 +137,13 @@ socket.connect();
 
 type Shark = ReturnType<typeof createSharkControlClient>;
 
+const state = {
+    lastScanBeat: 0,
+};
+
+const beatsPerSecond = 12;
+const scanRateInSeconds = 1;
+
 async function main() {
     const arenaId = '0004-1GB5';
     const playerId = '2deffb58-baae-44e5-9b6a-6348247e514b';
@@ -146,40 +153,54 @@ async function main() {
 
     shark.takeControl();
 
-    shark.getBeatUpdate(update => {
-
+    shark.getBeatUpdate((update: BeatUpdate | DeadBeatUpdate) => {
         if (update.isAlive === 'yes') {
-            const {
-                gameTime,
-                mode,
-                centerPoint,
-                facing,
-                energy,
-                health,
-                torpedoCount,
-                actualFinSpeed,
-                // scores,
-                events,
-            } = update;
-            console.log(update);
-
+            roam(shark, update, arena_settings);
+            scan(shark, update, arena_settings);
+            laser(shark, update, arena_settings);
+            torpedo(shark, update, arena_settings);
         }
     });
-    shark.takeControl();
-    let move = false;
-    const in_action = false;
-    shark.setFinSpeed(5, 5)
-
-    shark.getBeatUpdate((update: any) => {
-        roam(shark, update, arena_settings);
-    });
-
-    //sharkControlClient.setSharkMode(arenaId,player_id,"attack")
-    /* S */
-
-
-    // const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
 }
+
+function scan(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
+    const scanRateInBeats = scanRateInSeconds * beatsPerSecond;
+    const readyToScan = (update.gameTime - state.lastScanBeat) % scanRateInBeats === 0
+        && update.energy > arena_settings.scan.narrowScanToll.energy;
+
+    if (readyToScan) {
+        shark.performNarrowScan(update.facing);
+        state.lastScanBeat = update.gameTime;
+    }
+}
+
+function laser(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
+    const scanExecuted = pick(update.events,
+        event => event.event === 'narrowScanExecutedEvent' ? event : undefined);
+
+    const target = scanExecuted?.sharks?.[0];
+
+    if (target && update.energy > arena_settings.laser.firingToll.energy) {
+        shark.fireLaser();
+    }
+}
+
+function torpedo(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
+    if (update.torpedoCount) {
+        const centerY = arena_settings.dimensions.height / 2;
+        const centerX = arena_settings.dimensions.height / 2;
+
+        const angle = Math.atan((centerY - update.centerPoint.y) / (centerX - update.centerPoint.x));
+        console.log('firing torpedo', angle);
+        shark.fireTorpedo(angle);
+    }
+}
+
+const pick = <T, R>(values: T[], chooser: (value: T) => R | undefined): R | undefined => {
+    const value = values.find(value => chooser(value) !== undefined);
+    return value === undefined ? undefined : chooser(value);
+};
+
 
 function roam(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     //console.log(update);
@@ -276,6 +297,7 @@ function closeToEdge(x: number, y: number, arena_settings: ArenaSettings) {
     }
     return false;
 }
+
 function findEdge(x: number, y: number, arena_settings: ArenaSettings) {
     let edge = ""
     if (x <= 70) {
@@ -329,6 +351,3 @@ async function createShark(arena: string, name: string) {
 }
 
 main();
-
-
-

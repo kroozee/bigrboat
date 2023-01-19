@@ -125,5 +125,6 @@ export type CreatePlayer = {
 }
 
 export type HealthAndEnergyChange = {
-    change:number;
+    energy:number;
+    health:number;
 }
