@@ -1,0 +1,25 @@
+@host = http://192.168.130.142:3000
+
+###
+
+POST {{host}}/create-arena
+Content-Type: application/json
+
+{
+    "arenaType": "private",
+    "countdownToStart": 24,
+    "gameLength": 43200,
+    "players": [
+        { "sharkName": "ryan" },
+        { "sharkName": "trent" },
+        { "sharkName": "donald" }
+    ]
+}
+
+###
+
+GET {{host}}/public-arenas 
+
+###
+
+GET {{host}}/arena-settings/0004-1GB5
