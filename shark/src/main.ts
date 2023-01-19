@@ -1,17 +1,17 @@
 import { io, Socket } from "socket.io-client";
-import fetch  from "node-fetch";
-import {  PlayerCreated, PublicArenaCreated } from './arena';
+import fetch from "node-fetch";
+import { ArenaSettings, PlayerCreated, PublicArenaCreated } from './arena';
 import { BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 
 const api_root = "http://192.168.130.142:3000";
 const socket: Socket<ServerToClientEvents, any> = io(api_root);
-type beatUpdateDelegate = (update : BeatUpdate | DeadBeatUpdate) => void;
+type beatUpdateDelegate = (update: BeatUpdate | DeadBeatUpdate) => void;
 type commandUpdateDelegate = (update: CommandUpdate) => void;
 
-let beatUpdate : beatUpdateDelegate = _ => {};
-let commandUpdate : commandUpdateDelegate = _ => {};
+let beatUpdate: beatUpdateDelegate = _ => { };
+let commandUpdate: commandUpdateDelegate = _ => { };
 const doResultLogging = false;
 
 function logResult(result: CommandUpdate) {
@@ -20,7 +20,10 @@ function logResult(result: CommandUpdate) {
 }
 
 socket.on('commandUpdate', (update => {
-    commandUpdate(update);
+    //console.log('**Command result**', update);
+    if(update.status !== "succeeded"){
+        console.log(update);
+    }
 }));
 
 socket.on('beatUpdate', update => {
@@ -63,7 +66,7 @@ export const sharkControlClient = {
             'setFinSpeed',
             arenaId,
             playerId,
-            { port: portSpeed, starboard: starboardSpeed},
+            { port: portSpeed, starboard: starboardSpeed },
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
@@ -134,21 +137,102 @@ socket.connect();
 
 async function main() {
     console.log('started');
-    const arenaId = "0000-T0P4";
-    const player_id = "3ab602f5-1652-44d7-bfa5-5d5b8826776f";
     //const arena = await createArena(); 
+    const arenaId = "0002-DYGH";
+    const arena_call = await fetch(`${api_root}/arena-settings/${arenaId}`);
+    const arena_settings = await arena_call.json() as ArenaSettings;
     //const player = await createShark(arenaId,"BIGRBOAT");
+
+    const player_id = "0002-DYH2"
+
     //console.log(player.playerId);
-    sharkControlClient.takeControl(arenaId,player_id);
-    sharkControlClient.getBeatUpdate((update)=>{
-        console.log(update);
+    sharkControlClient.takeControl(arenaId, player_id);
+    let move = false;
+    const in_action = false;
+    sharkControlClient.setFinSpeed(arenaId, player_id, 5, 5)
+
+    sharkControlClient.getBeatUpdate((update: any) => {
+        roam(arenaId, player_id, update, arena_settings);
     });
-    //sharkControlClient.setSharkMode(arenaId,player_id,"attack")
-    sharkControlClient.fireTorpedo(arenaId,player_id,Math.PI)
-    sharkControlClient.fireLaser(arenaId,player_id);
+
 
 
     // const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
+}
+
+function roam(a_id: string, p_id: string, update: BeatUpdate, arena_settings: ArenaSettings) {
+    //console.log(update);
+    const x = update.centerPoint.x;
+    const y = update.centerPoint.y;
+    let left = 0;
+    let right = 0;
+    if (closeToEdge(x, y, arena_settings)) {
+        sharkControlClient.setFinSpeed(a_id, p_id, 0, 0);
+        const edge = findEdge(x, y, arena_settings);
+        turn(edge!, a_id, p_id, update, arena_settings);
+        //debugger;
+    } else {
+        sharkControlClient.setFinSpeed(a_id, p_id, 5, 5)
+    }
+
+    //
+}
+
+function turn(edge: string, a_id: string, p_id: string, update: BeatUpdate, arena_settings: ArenaSettings) {
+    console.log(update.facing);
+    switch (edge) {
+        case "top":
+            if (update.facing > 3.1 && update.facing < 3.2) {
+                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+            } else {
+                sharkControlClient.setFinSpeed(a_id, p_id, 0, 5);
+            }
+            break;
+        case "bottom":
+            if (update.facing > 4.71 && update.facing < 4.72) {
+                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+            } else {
+                sharkControlClient.setFinSpeed(a_id, p_id,0,5);
+            }
+            break;
+        case "right":
+            if (update.facing > 0.1 && update.facing < 0.3) {
+                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+            } else {
+                sharkControlClient.setFinSpeed(a_id, p_id, 0, 5);
+            }
+            break;
+        case "left":
+            if (update.facing > 6 && update.facing <= 6.2) {
+                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+            } else {
+                sharkControlClient.setFinSpeed(a_id, p_id, 5, 0);
+            }
+            break;
+    }
+}
+function closeToEdge(x: number, y: number, arena_settings: ArenaSettings) {
+    if (x <= 70 || y <= 70) {
+        return true;
+    }
+    if (x >= (arena_settings.dimensions.width - 70) || y >= (arena_settings.dimensions.height - 70)) {
+        return true;
+    }
+    return false;
+}
+function findEdge(x: number, y: number, arena_settings: ArenaSettings) {
+    if (x <= 70) {
+        return "left";
+    }
+    if (x >= (arena_settings.dimensions.width - 70)) {
+        return "right";
+    }
+    if (y <= 70) {
+        return "bottom";
+    };
+    if (y >= arena_settings.dimensions.width - 70) {
+        return "top";
+    }
 }
 
 
@@ -159,27 +243,27 @@ async function createArena(): Promise<PublicArenaCreated> {
         countdownToStart: 24,
         gameLength: 720
     }
-    const result = await fetch(`${api_root}/create-arena`,{
-        method:"POST",
+    const result = await fetch(`${api_root}/create-arena`, {
+        method: "POST",
         body: JSON.stringify(payload),
-        headers: {'Content-Type': 'application/json'}
+        headers: { 'Content-Type': 'application/json' }
     });
     const body = await result.json();
-    return body as PublicArenaCreated;
+    return body as any;
 }
 
 
-async function createShark(arena:string, name:string) {
+async function createShark(arena: string, name: string) {
     const payload = {
-        sharkName:name
+        sharkName: name
     }
-    const result = await fetch(`${api_root}/create-public-player/${arena}`,{
-        method:"POST",
-        body:JSON.stringify(payload),
-        headers: {'Content-Type': 'application/json'}
+    const result = await fetch(`${api_root}/create-public-player/${arena}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
     });
     const body = await result.json();
-    return body as PlayerCreated;
+    return body as any;
 }
 
 main();
