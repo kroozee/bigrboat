@@ -21,7 +21,7 @@ function logResult(result: CommandUpdate) {
 
 socket.on('commandUpdate', (update => {
     //console.log('**Command result**', update);
-    if(update.status !== "succeeded"){
+    if (update.status !== "succeeded") {
         console.log(update);
     }
 }));
@@ -30,7 +30,7 @@ socket.on('beatUpdate', update => {
     beatUpdate(update);
     const nonProximityEvents = update.events /*.filter(e => e.event != 'proximityAlarmEvent')*/.length > 0;
     if (nonProximityEvents) {
-        console.log('beat events detected', update)
+        //console.log('beat events detected', update)
     }
     else if (update.gameTime % 720 == 0) {
         console.log('1 minute beat Update', update)
@@ -138,8 +138,8 @@ socket.connect();
 type Shark = ReturnType<typeof createSharkControlClient>;
 
 async function main() {
-    const arenaId = '0001-4TA3';
-    const playerId = '72ded5d1-3ada-48ff-ae1c-42a5a64316f9';
+    const arenaId = '0004-1GB5';
+    const playerId = '2deffb58-baae-44e5-9b6a-6348247e514b';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
@@ -175,8 +175,7 @@ async function main() {
     });
 
     //sharkControlClient.setSharkMode(arenaId,player_id,"attack")
-    shark.fireTorpedo(Math.PI)
-    shark.fireLaser();
+    /* S */
 
 
     // const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
@@ -186,53 +185,88 @@ function roam(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     //console.log(update);
     const x = update.centerPoint.x;
     const y = update.centerPoint.y;
-    let left = 0;
-    let right = 0;
+
     if (closeToEdge(x, y, arena_settings)) {
-        shark.setFinSpeed(0, 0);
         const edge = findEdge(x, y, arena_settings);
         turn(edge!, shark, update, arena_settings);
         //debugger;
     } else {
-        shark.setFinSpeed(5, 5)
+        shark.setFinSpeed(6, 6)
     }
 
     //
 }
 
 function turn(edge: string, shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
-    console.log(update.facing);
+    console.log(`Edge: ${edge}    Facing: ${update.facing}`);
     switch (edge) {
         case "top":
-            if (update.facing > 3.1 && update.facing < 3.2) {
-                shark.setFinSpeed(5, 5);
+            if (update.facing > 4.5  && update.facing < 4.71) {
+                console.log("Facing left? go ahead?");
+                shark.setFinSpeed(6, 6);
             } else {
-                shark.setFinSpeed(0, 5);
+                shark.setFinSpeed(-1, 1);
             }
             break;
         case "bottom":
-            if (update.facing > 4.71 && update.facing < 4.72) {
-                shark.setFinSpeed(5, 5);
+            if (update.facing > 1.57 && update.facing < 1.7) {
+                shark.setFinSpeed(6, 6);
+                console.log("Facing right? go ahead?");
             } else {
-                shark.setFinSpeed(0,5);
+                shark.setFinSpeed(-1, 1);
             }
             break;
         case "right":
-            if (update.facing > 0.1 && update.facing < 0.3) {
-                shark.setFinSpeed(5, 5);
+            if (update.facing > 5.9 && update.facing < 6.28 ) {
+                shark.setFinSpeed(6, 6);
+                console.log("Facing up? go ahead?");
             } else {
-                shark.setFinSpeed(0, 5);
+                shark.setFinSpeed(-1, 1);
             }
             break;
         case "left":
-            if (update.facing > 6 && update.facing <= 6.2) {
-                shark.setFinSpeed(5, 5);
+            if (update.facing > 3.14 && update.facing <= 3.3) {
+                shark.setFinSpeed(6, 6);
+                console.log("Facing down? go ahead?");
             } else {
-                shark.setFinSpeed(5, 0);
+                shark.setFinSpeed(-1, 1);
+            }
+            break;
+        case "rightbottom":
+            if (update.facing > 5.9 && update.facing < 6.28 ) {
+                shark.setFinSpeed(6, 6);
+                console.log("Facing up? go ahead?");
+            } else {
+                shark.setFinSpeed(-1, 1);
+            }
+            break;
+        case "righttop":
+            if (update.facing > 4.71 && update.facing < 4.9) {
+                console.log("Facing left? go ahead?");
+                shark.setFinSpeed(6, 6);
+            } else {
+                shark.setFinSpeed(-1, 1);
+            }
+            break;
+        case "lefttop":
+            if (update.facing > 3.14 && update.facing <= 3.3) {
+                shark.setFinSpeed(6, 6);
+                console.log("Facing down? go ahead?");
+            } else {
+                shark.setFinSpeed(-1, 1);
+            }
+            break;
+        case "leftbottom":
+            if (update.facing >1.4  && update.facing < 1.57) {
+                shark.setFinSpeed(6, 6);
+                console.log("Facing right? go ahead?");
+            } else {
+                shark.setFinSpeed(-1, 1);
             }
             break;
     }
 }
+
 function closeToEdge(x: number, y: number, arena_settings: ArenaSettings) {
     if (x <= 70 || y <= 70) {
         return true;
@@ -243,18 +277,20 @@ function closeToEdge(x: number, y: number, arena_settings: ArenaSettings) {
     return false;
 }
 function findEdge(x: number, y: number, arena_settings: ArenaSettings) {
+    let edge = ""
     if (x <= 70) {
-        return "left";
+        edge += "left";
     }
     if (x >= (arena_settings.dimensions.width - 70)) {
-        return "right";
+        edge += "right";
     }
     if (y <= 70) {
-        return "bottom";
+        edge += "bottom";
     };
-    if (y >= arena_settings.dimensions.width - 70) {
-        return "top";
+    if (y >= arena_settings.dimensions.height - 70) {
+        edge += "top";
     }
+    return edge;
 }
 
 async function getArenaSettings(arenaId: string): Promise<ArenaSettings> {
