@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import fetch from "node-fetch";
 import { ArenaSettings, PlayerCreated, PublicArenaCreated } from './arena';
-import { BeatEvent, BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
+import { BeatEvent, BeatUpdate, DeadBeatUpdate, narrowScanExecutedEvent, scannedShark, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 
@@ -142,11 +142,11 @@ const state = {
 };
 
 const beatsPerSecond = 12;
-const scanRateInSeconds = 1;
+const scanRateInSeconds = 0.5;
 
 async function main() {
     const arenaId = '0004-VUJK';
-    const playerId = 'c18d6358-1198-4bc4-b102-c10415b66d6f';
+    const playerId = '27a44e97-b2bf-423b-9095-d1ebfa3ad836';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
@@ -174,25 +174,58 @@ function scan(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     }
 }
 
-function laser(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
+function getAngleTowardsCenter(update: BeatUpdate, arena_settings: ArenaSettings): number {
+    const centerY = arena_settings.dimensions.height / 2;
+    const centerX = arena_settings.dimensions.height / 2;
+
+    const angleTowardsCenter = Math.atan(
+        (centerY - update.centerPoint.y)
+        / (centerX - update.centerPoint.x));
+
+    const modifier = update.centerPoint.x < centerX
+        ? Math.PI / 2
+        : Math.PI * 1.5;
+
+    const final = update.centerPoint.x * update.centerPoint.y >= 0
+        ? modifier - angleTowardsCenter
+        : modifier + angleTowardsCenter;
+
+    return final;
+}
+
+function detectNearbyShark(update: BeatUpdate): scannedShark | undefined {
     const scanExecuted = pick(update.events,
         event => event.event === 'narrowScanExecutedEvent' ? event : undefined);
 
-    const target = scanExecuted?.sharks?.[0];
+    return scanExecuted?.sharks?.[0];
+}
 
-    if (target && update.energy > arena_settings.laser.firingToll.energy) {
+function laser(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
+    const nearbyShark = detectNearbyShark(update);
+
+    if (nearbyShark && update.energy > arena_settings.laser.firingToll.energy) {
         shark.fireLaser();
     }
 }
 
 function torpedo(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
-    if (update.torpedoCount) {
-        const centerY = arena_settings.dimensions.height / 2;
-        const centerX = arena_settings.dimensions.height / 2;
-
-        const angle = Math.atan((centerY - update.centerPoint.y) / (centerX - update.centerPoint.x));
-        console.log('firing torpedo', angle);
+    const fireTowardsCenter = () => {
+        const angle = getAngleTowardsCenter(update, arena_settings);
         shark.fireTorpedo(angle);
+    };
+
+    const fireAtNearby = () => {
+        const nearbyShark = detectNearbyShark(update);
+
+        if (nearbyShark) {
+
+        }
+    };
+
+    if (update.torpedoCount > 1) {
+        fireTowardsCenter();
+    } else {
+        fireAtNearby();
     }
 }
 
@@ -200,7 +233,6 @@ const pick = <T, R>(values: T[], chooser: (value: T) => R | undefined): R | unde
     const value = values.find(value => chooser(value) !== undefined);
     return value === undefined ? undefined : chooser(value);
 };
-
 
 function roam(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     //console.log(update);
