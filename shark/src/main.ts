@@ -145,8 +145,8 @@ const beatsPerSecond = 12;
 const scanRateInSeconds = 1;
 
 async function main() {
-    const arenaId = '0004-1GB5';
-    const playerId = '2deffb58-baae-44e5-9b6a-6348247e514b';
+    const arenaId = '0004-VUJK';
+    const playerId = 'c18d6358-1198-4bc4-b102-c10415b66d6f';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
@@ -222,65 +222,60 @@ function turn(edge: string, shark: Shark, update: BeatUpdate, arena_settings: Ar
     console.log(`Edge: ${edge}    Facing: ${update.facing}`);
     switch (edge) {
         case "top":
-            if (update.facing > 4.5  && update.facing < 4.71) {
-                console.log("Facing left? go ahead?");
+            if (update.facing > 4.5 && update.facing < 4.71) {
+
                 shark.setFinSpeed(6, 6);
             } else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "bottom":
-            if (update.facing > 1.57 && update.facing < 1.7) {
+            if (update.facing > 1 && update.facing < 1.57) {
                 shark.setFinSpeed(6, 6);
-                console.log("Facing right? go ahead?");
+
             } else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "right":
-            if (update.facing > 5.9 && update.facing < 6.28 ) {
+            if (update.facing > 5 && update.facing < 6.28) {
                 shark.setFinSpeed(6, 6);
-                console.log("Facing up? go ahead?");
             } else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "left":
-            if (update.facing > 3.14 && update.facing <= 3.3) {
+            if (update.facing > 2 && update.facing <= 3.14) {
                 shark.setFinSpeed(6, 6);
-                console.log("Facing down? go ahead?");
             } else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "rightbottom":
-            if (update.facing > 5.9 && update.facing < 6.28 ) {
+            if (update.facing > 5 && update.facing < 6.28) {
                 shark.setFinSpeed(6, 6);
-                console.log("Facing up? go ahead?");
             } else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "righttop":
             if (update.facing > 4.71 && update.facing < 4.9) {
-                console.log("Facing left? go ahead?");
                 shark.setFinSpeed(6, 6);
             } else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "lefttop":
-            if (update.facing > 3.14 && update.facing <= 3.3) {
+            if (update.facing > 2.95 && update.facing <= 3.14) {
                 shark.setFinSpeed(6, 6);
-                console.log("Facing down? go ahead?");
-            } else {
+            }
+            else {
                 shark.setFinSpeed(-1, 1);
             }
             break;
         case "leftbottom":
-            if (update.facing >1.4  && update.facing < 1.57) {
+            if (update.facing > 1 && update.facing < 1.57) {
                 shark.setFinSpeed(6, 6);
-                console.log("Facing right? go ahead?");
             } else {
                 shark.setFinSpeed(-1, 1);
             }
