@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import fetch from "node-fetch";
 import { ArenaSettings, PlayerCreated, PublicArenaCreated } from './arena';
-import { BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
+import { BeatEvent, BeatUpdate, DeadBeatUpdate, SharkMode } from "./beatEvents";
 import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 
@@ -37,7 +37,7 @@ socket.on('beatUpdate', update => {
     }
 })
 
-export const sharkControlClient = {
+const createSharkControlClient = (arenaId: string, playerId: string) => ({
 
     getBeatUpdate: (delegate: beatUpdateDelegate) => beatUpdate = delegate,
     getCommandUpdate: (delegate: commandUpdateDelegate) => commandUpdate = delegate,
@@ -49,7 +49,7 @@ export const sharkControlClient = {
         })
     },
 
-    takeControl: (arenaId: string, playerId: string) => {
+    takeControl: () => {
         socket.emit(
             'takeControl',
             arenaId,
@@ -61,7 +61,7 @@ export const sharkControlClient = {
         )
     },
 
-    setFinSpeed: (arenaId: string, playerId: string, portSpeed: number, starboardSpeed: number) => {
+    setFinSpeed: (portSpeed: number, starboardSpeed: number) => {
         socket.emit(
             'setFinSpeed',
             arenaId,
@@ -73,7 +73,7 @@ export const sharkControlClient = {
             });
     },
 
-    setSharkMode: (arenaId: string, playerId: string, mode: SharkMode) => {
+    setSharkMode: (mode: SharkMode) => {
         socket.emit(
             'setSharkMode',
             arenaId,
@@ -85,7 +85,7 @@ export const sharkControlClient = {
             });
     },
 
-    performWideScan: (arenaId: string, playerId: string) => {
+    performWideScan: () => {
         socket.emit(
             'performWideScan',
             arenaId,
@@ -96,7 +96,7 @@ export const sharkControlClient = {
             });
     },
 
-    fireLaser: (arenaId: string, playerId: string) => {
+    fireLaser: () => {
         socket.emit(
             'fireLaser',
             arenaId,
@@ -107,7 +107,7 @@ export const sharkControlClient = {
             });
     },
 
-    performNarrowScan: (arenaId: string, playerId: string, angle: number) => {
+    performNarrowScan: (angle: number) => {
         socket.emit(
             'performNarrowScan',
             arenaId,
@@ -119,7 +119,7 @@ export const sharkControlClient = {
             });
     },
 
-    fireTorpedo: (arenaId: string, playerId: string, angle: number) => {
+    fireTorpedo: (angle: number) => {
         socket.emit(
             'fireTorpedo',
             arenaId,
@@ -130,83 +130,105 @@ export const sharkControlClient = {
                 logResult(result);
             });
     }
-};
+});
 
 socket.on('connect', () => console.log('connected!!!!!'));
 socket.connect();
 
+type Shark = ReturnType<typeof createSharkControlClient>;
+
 async function main() {
-    console.log('started');
-    //const arena = await createArena(); 
-    const arenaId = "0002-DYGH";
-    const arena_call = await fetch(`${api_root}/arena-settings/${arenaId}`);
-    const arena_settings = await arena_call.json() as ArenaSettings;
-    //const player = await createShark(arenaId,"BIGRBOAT");
+    const arenaId = '0001-4TA3';
+    const playerId = '72ded5d1-3ada-48ff-ae1c-42a5a64316f9';
+    const arena_settings = await getArenaSettings(arenaId);
 
-    const player_id = "0002-DYH2"
+    const shark = createSharkControlClient(arenaId, playerId);
 
-    //console.log(player.playerId);
-    sharkControlClient.takeControl(arenaId, player_id);
+    shark.takeControl();
+
+    shark.getBeatUpdate(update => {
+
+        if (update.isAlive === 'yes') {
+            const {
+                gameTime,
+                mode,
+                centerPoint,
+                facing,
+                energy,
+                health,
+                torpedoCount,
+                actualFinSpeed,
+                // scores,
+                events,
+            } = update;
+            console.log(update);
+
+        }
+    });
+    shark.takeControl();
     let move = false;
     const in_action = false;
-    sharkControlClient.setFinSpeed(arenaId, player_id, 5, 5)
+    shark.setFinSpeed(5, 5)
 
-    sharkControlClient.getBeatUpdate((update: any) => {
-        roam(arenaId, player_id, update, arena_settings);
+    shark.getBeatUpdate((update: any) => {
+        roam(shark, update, arena_settings);
     });
 
+    //sharkControlClient.setSharkMode(arenaId,player_id,"attack")
+    shark.fireTorpedo(Math.PI)
+    shark.fireLaser();
 
 
     // const shark = await createShark(arena.data.arenaId,"BIGRBOAT");
 }
 
-function roam(a_id: string, p_id: string, update: BeatUpdate, arena_settings: ArenaSettings) {
+function roam(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     //console.log(update);
     const x = update.centerPoint.x;
     const y = update.centerPoint.y;
     let left = 0;
     let right = 0;
     if (closeToEdge(x, y, arena_settings)) {
-        sharkControlClient.setFinSpeed(a_id, p_id, 0, 0);
+        shark.setFinSpeed(0, 0);
         const edge = findEdge(x, y, arena_settings);
-        turn(edge!, a_id, p_id, update, arena_settings);
+        turn(edge!, shark, update, arena_settings);
         //debugger;
     } else {
-        sharkControlClient.setFinSpeed(a_id, p_id, 5, 5)
+        shark.setFinSpeed(5, 5)
     }
 
     //
 }
 
-function turn(edge: string, a_id: string, p_id: string, update: BeatUpdate, arena_settings: ArenaSettings) {
+function turn(edge: string, shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     console.log(update.facing);
     switch (edge) {
         case "top":
             if (update.facing > 3.1 && update.facing < 3.2) {
-                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+                shark.setFinSpeed(5, 5);
             } else {
-                sharkControlClient.setFinSpeed(a_id, p_id, 0, 5);
+                shark.setFinSpeed(0, 5);
             }
             break;
         case "bottom":
             if (update.facing > 4.71 && update.facing < 4.72) {
-                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+                shark.setFinSpeed(5, 5);
             } else {
-                sharkControlClient.setFinSpeed(a_id, p_id,0,5);
+                shark.setFinSpeed(0,5);
             }
             break;
         case "right":
             if (update.facing > 0.1 && update.facing < 0.3) {
-                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+                shark.setFinSpeed(5, 5);
             } else {
-                sharkControlClient.setFinSpeed(a_id, p_id, 0, 5);
+                shark.setFinSpeed(0, 5);
             }
             break;
         case "left":
             if (update.facing > 6 && update.facing <= 6.2) {
-                sharkControlClient.setFinSpeed(a_id, p_id, 5, 5);
+                shark.setFinSpeed(5, 5);
             } else {
-                sharkControlClient.setFinSpeed(a_id, p_id, 5, 0);
+                shark.setFinSpeed(5, 0);
             }
             break;
     }
@@ -235,7 +257,11 @@ function findEdge(x: number, y: number, arena_settings: ArenaSettings) {
     }
 }
 
-
+async function getArenaSettings(arenaId: string): Promise<ArenaSettings> {
+    const result = await fetch(`${api_root}/arena-settings/${arenaId}`);
+    const body = await result.json();
+    return body as ArenaSettings;
+}
 
 async function createArena(): Promise<PublicArenaCreated> {
     const payload = {
