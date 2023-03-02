@@ -6,7 +6,7 @@ import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 import { Position } from './spacial';
 
-const api_root = "http://192.168.130.142:3000";
+const api_root = "http://127.0.0.1:3000";
 const socket: Socket<ServerToClientEvents, any> = io(api_root);
 type beatUpdateDelegate = (update: BeatUpdate | DeadBeatUpdate) => void;
 type commandUpdateDelegate = (update: CommandUpdate) => void;
@@ -67,7 +67,8 @@ const createSharkControlClient = (arenaId: string, playerId: string) => ({
             'setFinSpeed',
             arenaId,
             playerId,
-            { port: portSpeed, starboard: starboardSpeed },
+            portSpeed, 
+            starboardSpeed ,
             (result: CommandUpdate) => {
                 commandUpdate(result);
                 logResult(result);
@@ -148,8 +149,8 @@ const forwardScanRateInSeconds = 0.75;
 const centerScanRateInSeconds = 2;
 
 async function main() {
-    const arenaId = '0000-00DA';
-    const playerId = '681802ef-9c6c-4ca6-8ef7-7553c5f98e93';
+    const arenaId = '0000-004J';
+    const playerId = '0bf0fda7-53b4-42c4-ad77-6e82e0fc4513';
     const arena_settings = await getArenaSettings(arenaId);
 
     const shark = createSharkControlClient(arenaId, playerId);
@@ -229,7 +230,7 @@ function getAngleTowardsPoint(ourPosition: Position, targetPosition: Position, a
 
 function getAngleTowardsCenter(update: BeatUpdate, arena_settings: ArenaSettings): number {
     return getAngleTowardsPoint(
-        update.centerPoint,
+        {x:update.positionX,y:update.positionY},
         {
             x: arena_settings.dimensions.width / 2,
             y: arena_settings.dimensions.height
@@ -265,7 +266,7 @@ function torpedo(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings
         const nearbyShark = scanExecuted?.sharks?.[0];
 
         if (scanExecuted && scanExecuted.direction !== update.facing && nearbyShark) {
-            const angle = getAngleTowardsPoint(update.centerPoint, nearbyShark.center, arena_settings);
+            const angle = getAngleTowardsPoint({x:update.positionX,y:update.positionY},{x:nearbyShark.centerX,y:nearbyShark.centerY}, arena_settings);
             shark.fireTorpedo(angle);
 
 
@@ -301,8 +302,8 @@ const pick = <T, R>(values: T[], chooser: (value: T) => R | undefined): R | unde
 
 function roam(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     //console.log(update);
-    const x = update.centerPoint.x;
-    const y = update.centerPoint.y;
+    const x = update.positionX;
+    const y = update.positionY;
 
     if (closeToEdge(x, y, arena_settings)) {
         const edge = findEdge(x, y, arena_settings);
@@ -410,7 +411,7 @@ function findEdge(x: number, y: number, arena_settings: ArenaSettings) {
 }
 
 async function getArenaSettings(arenaId: string): Promise<ArenaSettings> {
-    const result = await fetch(`${api_root}/arena-settings/${arenaId}`);
+    const result = await fetch(`${api_root}/arena/${arenaId}/settings`);
     const body = await result.json();
     return body as ArenaSettings;
 }

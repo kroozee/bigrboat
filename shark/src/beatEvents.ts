@@ -6,11 +6,13 @@ type basicShark = {
 }
 
 export type scannedShark = {
+    centerX:number,
+    centerY:number,
+    direction:number,
     sharkId: string
     name: string
-    center: Position
-    velocity: Velocity
-    healthStatus: any //sharkHealthStatus
+    speed: Velocity
+    healthStatus: string //sharkHealthStatus
 }
 
 type scannedTorpedo = {
@@ -33,12 +35,14 @@ export type BeatUpdate = {
     gameTime: number
     isAlive: 'yes'
     mode: SharkMode
-    centerPoint: Position
+    positionX: number
+    positionY: number
     facing: number
     energy: number
     health: number
     torpedoCount: number
-    actualFinSpeed: FinSpeed
+    portFinSpeedActual: number
+    starboardFinSpeedActual: number
     scores: SharkScoreUpdate[]
     events: BeatEvent[]
 }
