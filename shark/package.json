@@ -1,21 +1,26 @@
 {
-  "name": "shark",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "tsc --project tsconfig.json --watch"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "node-fetch": "^3.3.0",
-    "socket.io-client": "^4.5.4"
-  },
-  "devDependencies": {
-    "@types/node": "^18.11.18"
-  }
+    "name": "shark",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "watch": "tsc --project tsconfig.json --watch"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "node-fetch": "^3.3.0",
+        "rxjs": "^7.8.1",
+        "socket.io-client": "^4.5.4"
+    },
+    "devDependencies": {
+        "@types/node": "^18.11.18",
+        "@typescript-eslint/eslint-plugin": "^5.59.11",
+        "@typescript-eslint/parser": "^5.59.11",
+        "eslint-config-prettier": "^8.8.0",
+        "eslint-plugin-prettier": "^4.2.1"
+    }
 }

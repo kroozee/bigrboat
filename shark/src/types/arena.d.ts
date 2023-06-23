@@ -1,5 +1,7 @@
-export const arenaTypes = ['private', 'public', 'official'] as const;
-export type ArenaType = typeof arenaTypes[number];
+export type ArenaType =
+    | 'private'
+    | 'public'
+    | 'official';
 
 export type ArenaSummary = {
     arenaId: string

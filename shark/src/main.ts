@@ -1,10 +1,10 @@
-import { io, Socket } from "socket.io-client";
 import fetch from "node-fetch";
-import { ArenaSettings, PublicArenaCreated } from './arena';
+import { io, Socket } from "socket.io-client";
+import { CommandUpdate } from "types/playerCommands";
 import { BeatUpdate, DeadBeatUpdate, scannedShark, SharkMode } from "./beatEvents";
-import { CommandUpdate } from "./playerCommands";
 import { ServerToClientEvents } from "./serverToClientEvents";
 import { Position } from './spacial';
+import { ArenaSettings, PublicArenaCreated } from './types/arena';
 
 const api_root = "http://127.0.0.1:3000";
 const socket: Socket<ServerToClientEvents, any> = io(api_root);
@@ -180,6 +180,10 @@ async function main() {
         }
     });
 }
+
+// stream updates, based on some criteria, determine what "mode" the shark should be in.
+// "modes" dictate what behavior the shark engages in - roaming, attacking, healing, evading, etc.
+// 
 
 function scan(shark: Shark, update: BeatUpdate, arena_settings: ArenaSettings) {
     const forwardScanRateInBeats = Math.floor(forwardScanRateInSeconds * beatsPerSecond);
