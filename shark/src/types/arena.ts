@@ -48,7 +48,7 @@ export type ArenaSettings = {
         energy: {
             starting: number
             max: number
-        }          
+        }
     }
     torpedo: {
         startingCount: number
@@ -81,7 +81,7 @@ export type ArenaSettings = {
     }
     scoring: {
         
-        perLivingBeat: number        
+        perLivingBeat: number
         perHealthDamageInflicted: number
         bounty: { // base * numberOfUnansweredKills^perAdditionalMultiplier
             base: number
@@ -127,6 +127,6 @@ export type CreatePlayer = {
 }
 
 export type HealthAndEnergyChange = {
-    energy:number;
-    health:number;
+    energy: number;
+    health: number;
 }

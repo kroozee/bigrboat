@@ -30,9 +30,9 @@ type ScannedTorpedo = {
 }
 
 export type SharkMode = 'attack' | 'repair' | 'stealth';
-type SharkHealthStatus = 'healthy' | 'crippled' | 'immobilized'
+export type SharkHealthStatus = 'healthy' | 'crippled' | 'immobilized'
 
-type Velocity = {
+export type Velocity = {
     speed: number;
     direction: Angle;
 };
